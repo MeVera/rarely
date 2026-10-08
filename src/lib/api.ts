@@ -2,7 +2,13 @@
 import type { TiersFile } from './bank';
 import { load, save } from './storage';
 
-export const API_BASE: string = (import.meta.env.VITE_API_BASE as string | undefined) ?? '/api';
+/**
+ * Where the Worker lives. Dev defaults to the Vite proxy at /api. A production build
+ * without VITE_API_BASE runs offline: starting tiers, submissions kept in the queue
+ * until a build with an API base ships (they're sent if under a week old).
+ */
+export const API_BASE: string =
+  (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/+$/, '') || (import.meta.env.DEV ? '/api' : '');
 
 export interface Submission {
   playerId: string;
@@ -11,6 +17,7 @@ export interface Submission {
 }
 
 export async function fetchTiers(timeoutMs = 6000): Promise<TiersFile | null> {
+  if (!API_BASE) return null;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -41,7 +48,7 @@ let flushing = false;
 
 /** Send queued submissions. Keeps them on network errors, 429 and 5xx. */
 export async function flushQueue(): Promise<void> {
-  if (flushing) return;
+  if (flushing || !API_BASE) return;
   flushing = true;
   try {
     for (const sub of load<Submission[]>(QUEUE_KEY, [])) {
