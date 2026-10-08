@@ -6,7 +6,7 @@ import { API_BASE, enqueueSubmission, fetchTiers, flushQueue, pendingSubmissions
 const ONLINE = Boolean(API_BASE);
 import { dateString, msUntilReset } from './lib/daily';
 import {
-  PROMPTS_BY_ID, loadGame, newGame, pruneOldGames, rarestMissed, saveGame, submitEntry, totalScore,
+  PROMPTS_BY_ID, loadExtras, loadGame, newGame, pruneOldGames, rarestMissed, saveGame, submitEntry, totalScore,
   type Entry, type GameState,
 } from './lib/game';
 import { labelForTier, pointsForTier, TIER_LABELS } from './lib/scoring';
@@ -127,13 +127,15 @@ async function startDay() {
   const file = await fetchTiers();
   if (dateString() !== today) return rollover();
   game = newGame(today, file);
+  await loadExtras(game.rounds.map((r) => r.promptId));
   game.phase = 'playing';
   persist();
   renderRound();
 }
 
-function resume() {
+async function resume() {
   if (!game) return renderHome();
+  await loadExtras(game.rounds.map((r) => r.promptId));
   if (game.phase === 'review') return renderReview();
   if (game.phase === 'done') return renderEnd();
   game.phase = 'playing';
@@ -240,6 +242,9 @@ function renderReview(timeUp = false) {
         ? h('ul', { class: 'chips' }, ...accepted.map((e) => h('li', { class: `chip t${e.tier}` },
             e.answer!, h('b', {}, `${labelForTier(e.tier!)} +${e.points}`))))
         : h('p', { class: 'muted' }, rejected.length ? 'Not in our list — no points this round.' : timeUp ? 'No answer in time.' : 'Skipped.'),
+      accepted.some((e) => e.verified)
+        ? h('p', { class: 'muted small' }, 'Not on our list, but it’s a real answer in the dictionary, so it scores as Rare.')
+        : null,
       rejected.length
         ? h('div', {},
             h('h3', {}, 'Not in our list'),
@@ -395,6 +400,7 @@ function showHelp() {
       h('li', {}, 'Rarer answers score more: ', TIER_LABELS.map((l, i) => `${l} ${pointsForTier(i + 1)}`).join(' · '), '.'),
       ONLINE ? h('li', {}, 'Rarity starts from our answer bank and adjusts to what real players say once a prompt has enough plays.') : null,
       h('li', {}, 'Spelling slips on longer words, plurals and British/American spellings are fine.'),
+      h('li', {}, 'Not on our list? If it’s a real word that fits the prompt (checked against a built-in dictionary), it still scores as Rare.'),
     ),
     h('p', { class: 'muted small' }, `A new game starts at midnight Melbourne time. One play per day. ${GAME_NAME} has no accounts and no ads.`),
   );

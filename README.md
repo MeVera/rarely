@@ -34,14 +34,24 @@ Append an object to `src/data/prompts.json`:
 
 - `id`: a unique lowercase slug. Starting tiers run from 1 (most common) to 5 (rarest).
 - `"a|b"` lists aliases: `a` is the answer shown, and `b` is also accepted.
-- Run `npm run validate`. It checks ids, tiers, duplicates after normalization (including plurals and spellings), and 40–80 answers. Over 80 is only a warning; `elements` keeps all 118 on purpose.
+- Run `npm run validate`. It checks ids, tiers, duplicates after normalization (including plurals and spellings), and at least 100 answers per prompt.
+- Run `npm run build:extras` to regenerate the dictionary-verified answers (see below), and add a WordNet category for the new prompt in `CATEGORIES` in `scripts/build-extras.ts` if one fits.
 - Deploy **both** parts, because the Worker bundles `prompts.json` too.
 
 Changing the number of prompts changes the shuffled schedule from that day on. Deploy prompt changes just after midnight Melbourne time. Players already part-way through a day keep the prompts saved on their device.
 
+## Answers that aren't in the list (no server needed)
+
+`scripts/build-extras.ts` uses WordNet (an open English dictionary, via the `wordnet-db` package) at build time to write `src/data/extras/<promptId>.json`:
+
+- **Category prompts** (fruit, mammals, rivers, diseases…): every word WordNet files under that category. Each prompt maps to one or more WordNet senses in `CATEGORIES`. Use `npx tsx scripts/wordnet.ts inspect <word>` to see the senses.
+- **Letter-rule prompts** (QU-, -IGHT, -TION, palindromes…): every dictionary word that obeys the rule. Inflections count when the typed word obeys the rule and its stem is a real word ("shouted").
+
+The game loads the files for the day's 20 prompts as small static chunks. An answer that misses the hand-built list but matches these scores `EXTRA_TIER` (Rare, 85). Profanity is always rejected, and typo-tolerance only applies to the hand-built list. Open-ended prompts with no dictionary category ("something that is round") still rely on the hand-built list.
+
 ## Tune the formula
 
-Everything is a named export in `src/lib/scoring.ts`: `TIER_POINTS`, `MIN_PLAYERS` (100), `TIER_PRIORS`, `PRIOR_WEIGHT_K` (20), `RARITY_OFFSET`/`RARITY_STEP` (0.6/0.5), `AUTO_ADD_MIN_PLAYERS` (10) and `NEW_ANSWER_STARTING_TIER` (5). Game constants (`TIMEZONE`, rounds, seconds, schedule epoch) live in `src/config.ts`. Matching rules (spelling map, plurals, fuzzy length) live in `src/lib/match.ts`. The profanity list is in `worker/src/blocklist.ts`.
+Everything is a named export in `src/lib/scoring.ts`: `TIER_POINTS`, `MIN_PLAYERS` (100), `TIER_PRIORS`, `PRIOR_WEIGHT_K` (20), `RARITY_OFFSET`/`RARITY_STEP` (0.6/0.5), `AUTO_ADD_MIN_PLAYERS` (10), `NEW_ANSWER_STARTING_TIER` (5) and `EXTRA_TIER` (4, for dictionary-verified answers). Game constants (`TIMEZONE`, rounds, seconds, schedule epoch) live in `src/config.ts`. Matching rules (spelling map, plurals, fuzzy length) live in `src/lib/match.ts`. The profanity list is in `src/lib/blocklist.ts`.
 
 ## How rarity updates
 

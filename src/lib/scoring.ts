@@ -21,6 +21,11 @@ export const RARITY_STEP = 0.5;
 
 /** Starting tier used for answers added from player data (auto or admin approved). */
 export const NEW_ANSWER_STARTING_TIER = 5;
+/**
+ * Tier for answers that aren't in the hand-built bank but are verified against
+ * WordNet (src/data/extras). They're real but outside our list, so "Rare".
+ */
+export const EXTRA_TIER = 4;
 /** Distinct players needed before an unlisted answer is auto-added. */
 export const AUTO_ADD_MIN_PLAYERS = 10;
 

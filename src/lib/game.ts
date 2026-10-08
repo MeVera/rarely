@@ -3,8 +3,9 @@ import prompts from '../data/prompts.json';
 import { MAX_ANSWER_LENGTH, MAX_ANSWERS_PER_ROUND, ROUND_SECONDS } from '../config';
 import { liveIndex, startingTiers, type PromptDef, type PromptTiers, type TiersFile } from './bank';
 import { addDays, hashString, promptIdsForDate } from './daily';
+import { buildExtrasIndex, matchExtra, type ExtrasFile, type ExtrasIndex } from './extras';
 import { matchAnswer, toKey, type AnswerIndex } from './match';
-import { pointsForTier } from './scoring';
+import { EXTRA_TIER, pointsForTier } from './scoring';
 import * as store from './storage';
 
 export const PROMPTS = prompts as unknown as PromptDef[];
@@ -17,6 +18,8 @@ export interface Entry {
   tier: number | null;
   points: number;
   flagged?: boolean;
+  /** Accepted via the WordNet extras rather than the hand-built bank. */
+  verified?: boolean;
 }
 
 export interface RoundState {
@@ -93,6 +96,25 @@ export function newGame(date: string, file: TiersFile | null): GameState {
   };
 }
 
+// Extra valid answers per prompt (static JSON, split into lazy chunks by Vite).
+const extrasModules = import.meta.glob<ExtrasFile>('../data/extras/*.json', { import: 'default' });
+const extrasCache = new Map<string, ExtrasIndex>();
+
+/** Load the WordNet extras for these prompts. Never throws: without them the bank still works. */
+export async function loadExtras(promptIds: string[]): Promise<void> {
+  await Promise.all(
+    promptIds.map(async (id) => {
+      const load = extrasModules[`../data/extras/${id}.json`];
+      if (!load || extrasCache.has(id)) return;
+      try {
+        extrasCache.set(id, buildExtrasIndex(await load()));
+      } catch {
+        /* offline or chunk missing */
+      }
+    }),
+  );
+}
+
 const indexCache = new Map<string, AnswerIndex>();
 
 export function indexFor(g: GameState, promptId: string): AnswerIndex {
@@ -127,6 +149,14 @@ export function submitEntry(g: GameState, raw: string): EntryResult {
   }
   const key = toKey(text);
   if (round.entries.some((e) => !e.answer && toKey(e.text) === key)) return { kind: 'duplicate', answer: null };
+  const extra = matchExtra(text, extrasCache.get(round.promptId));
+  if (extra) {
+    if (round.entries.some((e) => e.answer === extra)) return { kind: 'duplicate', answer: extra };
+    const accepted: Entry = { text, answer: extra, tier: EXTRA_TIER, points: pointsForTier(EXTRA_TIER), verified: true };
+    round.entries.push(accepted);
+    round.score += accepted.points;
+    return { kind: 'accepted', entry: accepted };
+  }
   const entry: Entry = { text, answer: null, tier: null, points: 0 };
   round.entries.push(entry);
   return { kind: 'rejected', entry };

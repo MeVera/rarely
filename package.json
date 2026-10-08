@@ -13,7 +13,8 @@
     "worker:dev": "wrangler dev --test-scheduled",
     "worker:deploy": "wrangler deploy",
     "db:migrate:local": "wrangler d1 migrations apply rarely --local",
-    "db:migrate:remote": "wrangler d1 migrations apply rarely --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply rarely --remote",
+    "build:extras": "tsx scripts/build-extras.ts"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261008.1",
@@ -22,6 +23,7 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.3",
     "vitest": "^5.0.3",
+    "wordnet-db": "^3.1.14",
     "wrangler": "^4.148.0"
   }
 }

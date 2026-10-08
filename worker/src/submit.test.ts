@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isBlocked } from './blocklist';
+import { isBlocked } from '../../src/lib/blocklist';
 import { validateBody } from './submit';
 
 const ok = {

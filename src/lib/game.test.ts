@@ -48,3 +48,34 @@ describe('game round scoring', () => {
     expect(missed[0].tier).toBe(5);
   });
 });
+
+describe('answers outside the bank (WordNet extras)', () => {
+  it('accepts a verified category word as Rare and still rejects nonsense', async () => {
+    const { loadExtras, newGame: make, submitEntry: submit } = await import('./game');
+    const g = make('2026-10-08', null);
+    // Force a known category prompt into round 1.
+    g.rounds[0].promptId = 'fruit';
+    g.tiers.fruit = { usingPlayerData: false, players: 0, tiers: {} };
+    await loadExtras(['fruit']);
+    const r = submit(g, 'Chinese gooseberry');
+    expect(r.kind).toBe('accepted');
+    expect(r.kind === 'accepted' && r.entry.verified && r.entry.points).toBe(85);
+  });
+
+  it('rule prompts accept real words that obey the rule, including inflections', async () => {
+    const { loadExtras, newGame: make, submitEntry: submit } = await import('./game');
+    for (const [promptId, word, ok] of [
+      ['sh-words', 'shoeblack', true],
+      ['sh-words', 'shuttering', true],
+      ['sh-words', 'shzzqx', false],
+      ['qu-words', 'blah', false],
+      ['tion-words', 'urbanization', true],
+    ] as const) {
+      const g = make('2026-10-08', null);
+      g.rounds[0].promptId = promptId;
+      g.tiers[promptId] = { usingPlayerData: false, players: 0, tiers: {} };
+      await loadExtras([promptId]);
+      expect(submit(g, word).kind, `${promptId}: ${word}`).toBe(ok ? 'accepted' : 'rejected');
+    }
+  });
+});

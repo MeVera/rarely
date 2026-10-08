@@ -5,7 +5,7 @@ import { buildIndex, matchAnswer } from '../../src/lib/match';
 import {
   AUTO_ADD_MIN_PLAYERS, computeTier, MIN_PLAYERS, NEW_ANSWER_STARTING_TIER,
 } from '../../src/lib/scoring';
-import { isBlocked } from './blocklist';
+import { isBlocked } from '../../src/lib/blocklist';
 import { liveStartingTiers, loadOverrides, overridesByPrompt, PROMPTS, type Env } from './live';
 
 export const TIERS_KEY = 'tiers.json';

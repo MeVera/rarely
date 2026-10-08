@@ -2,7 +2,7 @@
 // sent as "Authorization: Bearer <token>" by the admin page's own JS.
 import { buildIndex, matchAnswer, normalize } from '../../src/lib/match';
 import { MIN_PLAYERS } from '../../src/lib/scoring';
-import { isBlocked } from './blocklist';
+import { isBlocked } from '../../src/lib/blocklist';
 import { liveStartingTiers, loadOverrides, overridesByPrompt, PROMPTS, PROMPTS_BY_ID, type Env } from './live';
 import { getMeta, playerCounts, runNightly } from './nightly';
 import { HttpError } from './submit';

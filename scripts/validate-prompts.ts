@@ -1,14 +1,14 @@
 // Validates src/data/prompts.json. Run with `npm run validate`.
 // Errors: bad shape, duplicate ids, duplicate answers (raw or after normalization,
 // including plural/singular and spelling variants), tiers outside 1-5, fewer than
-// MIN_ANSWERS answers. Warnings: more than MAX_ANSWERS answers.
+// MIN_ANSWERS (100) answers. Warnings: more than MAX_ANSWERS answers.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ROUNDS_PER_DAY } from '../src/config';
 import { splitAliases, toKey, variants } from '../src/lib/match';
 
-const MIN_ANSWERS = 40;
-const MAX_ANSWERS = 80;
+const MIN_ANSWERS = 100;
+const MAX_ANSWERS = 250;
 
 const file = fileURLToPath(new URL('../src/data/prompts.json', import.meta.url));
 const raw = readFileSync(file, 'utf8');

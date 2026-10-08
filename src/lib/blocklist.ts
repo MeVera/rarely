@@ -1,7 +1,7 @@
 // Small profanity blocklist for auto-adding answers. Anything blocked still reaches
 // the admin review queue, so this only needs to stop the obvious cases.
 // Extend freely; entries are compared against normalized words and whole answers.
-import { normalize } from '../../src/lib/match';
+import { normalize } from './match';
 
 const BLOCKED_WORDS = new Set([
   'fuck', 'fucking', 'fucker', 'fucked', 'shit', 'shitty', 'bullshit', 'cunt', 'bitch', 'bastard',
