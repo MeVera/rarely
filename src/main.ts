@@ -1,6 +1,9 @@
 import './style.css';
 import { GAME_NAME, ROUND_SECONDS, ROUNDS_PER_DAY } from './config';
-import { enqueueSubmission, fetchTiers, flushQueue, pendingSubmissions } from './lib/api';
+import { API_BASE, enqueueSubmission, fetchTiers, flushQueue, pendingSubmissions } from './lib/api';
+
+/** False on a static-only deploy: hide copy that promises a server. */
+const ONLINE = Boolean(API_BASE);
 import { dateString, msUntilReset } from './lib/daily';
 import {
   PROMPTS_BY_ID, loadGame, newGame, pruneOldGames, rarestMissed, saveGame, submitEntry, totalScore,
@@ -241,7 +244,7 @@ function renderReview(timeUp = false) {
         ? h('div', {},
             h('h3', {}, 'Not in our list'),
             h('ul', { class: 'rejected-list' }, ...rejected.map((e) => rejectedRow(e))),
-            h('p', { class: 'muted small' }, 'Every answer is recorded. Popular ones get added to the list.'),
+            ONLINE ? h('p', { class: 'muted small' }, 'Every answer is recorded. Popular ones get added to the list.') : null,
           )
         : null,
       missed.length
@@ -266,7 +269,7 @@ function rejectedRow(e: Entry) {
     persist();
     done();
   });
-  const row = h('li', {}, h('span', { class: 'chip rej' }, e.text), btn);
+  const row = h('li', {}, h('span', { class: 'chip rej' }, e.text), ONLINE ? btn : null);
   if (e.flagged) done();
   return row;
 }
@@ -314,7 +317,7 @@ function renderEnd() {
   const countdown = h('strong', { style: 'font-variant-numeric:tabular-nums' }, fmtCountdown(msUntilReset()));
   const pending = h('p', { class: 'muted small center' });
   updatePendingNote = () => {
-    pending.textContent = pendingSubmissions() ? 'Your answers are saved and will be sent when you’re back online.' : '';
+    pending.textContent = ONLINE && pendingSubmissions() ? 'Your answers are saved and will be sent when you’re back online.' : '';
   };
   updatePendingNote();
 
@@ -343,7 +346,7 @@ function renderEnd() {
         h('thead', {}, h('tr', {}, h('th', {}, 'Prompt'), h('th', {}, 'Answer'), h('th', { class: 'num' }, 'Points'))),
         h('tbody', {}, ...rows),
       ),
-      g.tiersSource === 'starting'
+      ONLINE && g.tiersSource === 'starting'
         ? h('p', { class: 'muted small' }, 'Scored with starting rarity tiers (live tiers were unavailable when you started).')
         : null,
     ),
@@ -390,7 +393,7 @@ function showHelp() {
       h('li', {}, `Everyone gets the same ${ROUNDS_PER_DAY} prompts each day.`),
       h('li', {}, `You have ${ROUND_SECONDS} seconds per prompt and one answer. Type it and press Enter — no take-backs.`),
       h('li', {}, 'Rarer answers score more: ', TIER_LABELS.map((l, i) => `${l} ${pointsForTier(i + 1)}`).join(' · '), '.'),
-      h('li', {}, 'Rarity starts from our answer bank and adjusts to what real players say once a prompt has enough plays.'),
+      ONLINE ? h('li', {}, 'Rarity starts from our answer bank and adjusts to what real players say once a prompt has enough plays.') : null,
       h('li', {}, 'Spelling slips on longer words, plurals and British/American spellings are fine.'),
     ),
     h('p', { class: 'muted small' }, `A new game starts at midnight Melbourne time. One play per day. ${GAME_NAME} has no accounts and no ads.`),
