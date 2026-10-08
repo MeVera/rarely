@@ -1,0 +1,27 @@
+{
+  "name": "rarely",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run validate && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "validate": "tsx scripts/validate-prompts.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
+    "worker:dev": "wrangler dev --test-scheduled",
+    "worker:deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply rarely --local",
+    "db:migrate:remote": "wrangler d1 migrations apply rarely --remote"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261008.1",
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3",
+    "wrangler": "^4.148.0"
+  }
+}

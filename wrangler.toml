@@ -1,0 +1,27 @@
+name = "rarely-api"
+main = "worker/src/index.ts"
+compatibility_date = "2025-09-01"
+
+# Hourly. The job itself only runs once the Melbourne date has changed since the
+# last successful run, which handles daylight saving without editing this.
+[triggers]
+crons = ["7 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rarely"
+database_id = "00000000-0000-0000-0000-000000000000" # replace with `wrangler d1 create rarely` output
+migrations_dir = "worker/migrations"
+
+[[kv_namespaces]]
+binding = "TIERS"
+id = "00000000000000000000000000000000" # replace with `wrangler kv namespace create TIERS` output
+
+[vars]
+# Origin of the Pages site, for CORS. "*" is fine for a public game API.
+ALLOWED_ORIGIN = "*"
+
+# Secrets (not in this file):
+#   wrangler secret put ADMIN_TOKEN
+#   wrangler secret put IP_SALT     (optional; salts hashed IPs used for rate limiting)
+# Locally, put ADMIN_TOKEN=... in .dev.vars
