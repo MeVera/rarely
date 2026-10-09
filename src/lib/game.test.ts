@@ -23,11 +23,21 @@ describe('game round scoring', () => {
     expect(g.rounds[0].score).toBeGreaterThan(0);
   });
 
-  it('an unlisted answer uses up the round and scores zero', () => {
+  it('wrong answers do not use up the round', () => {
     const { g, tiers } = fresh();
     expect(submitEntry(g, 'zzqx not a thing').kind).toBe('rejected');
-    expect(submitEntry(g, Object.keys(tiers)[0]).kind).toBe('full');
+    expect(submitEntry(g, 'ZZQX not a thing!').kind).toBe('duplicate');
+    expect(submitEntry(g, 'another wrong one').kind).toBe('rejected');
     expect(g.rounds[0].score).toBe(0);
+    expect(submitEntry(g, Object.keys(tiers)[0]).kind).toBe('accepted');
+    expect(g.rounds[0].score).toBeGreaterThan(0);
+    expect(submitEntry(g, Object.keys(tiers)[1]).kind).toBe('full');
+  });
+
+  it('caps the number of wrong guesses', () => {
+    const { g } = fresh();
+    for (let i = 0; i < 50; i++) submitEntry(g, `nope ${i}`);
+    expect(submitEntry(g, 'nope again').kind).toBe('full');
   });
 
   it('uses frozen live tiers when provided', () => {

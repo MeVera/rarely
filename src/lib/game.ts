@@ -1,6 +1,6 @@
 // Game state for one day, plus helpers to create, score and persist it.
 import prompts from '../data/prompts.json';
-import { MAX_ANSWER_LENGTH, MAX_ANSWERS_PER_ROUND, ROUND_SECONDS } from '../config';
+import { MAX_ANSWER_LENGTH, MAX_ANSWERS_PER_ROUND, MAX_ATTEMPTS_PER_ROUND, ROUND_SECONDS } from '../config';
 import { liveIndex, startingTiers, type PromptDef, type PromptTiers, type TiersFile } from './bank';
 import { addDays, hashString, promptIdsForDate } from './daily';
 import { buildExtrasIndex, matchExtra, type ExtrasFile, type ExtrasIndex } from './extras';
@@ -136,7 +136,9 @@ export function submitEntry(g: GameState, raw: string): EntryResult {
   const round = g.rounds[g.roundIndex];
   const text = raw.trim().slice(0, MAX_ANSWER_LENGTH);
   if (!toKey(text)) return { kind: 'empty' };
-  if (round.entries.length >= MAX_ANSWERS_PER_ROUND) return { kind: 'full' };
+  // Wrong guesses are kept (they're shown in the review) but only correct answers use up the round.
+  if (round.entries.filter((e) => e.answer).length >= MAX_ANSWERS_PER_ROUND) return { kind: 'full' };
+  if (round.entries.length >= MAX_ATTEMPTS_PER_ROUND) return { kind: 'full' };
 
   const match = matchAnswer(text, indexFor(g, round.promptId));
   if (match) {

@@ -1,5 +1,5 @@
 // POST /submit — records answers. Never awards points: scores are computed client-side.
-import { MAX_ANSWER_LENGTH, MAX_ANSWERS_PER_ROUND, ROUNDS_PER_DAY } from '../../src/config';
+import { MAX_ANSWER_LENGTH, MAX_ATTEMPTS_PER_ROUND, ROUNDS_PER_DAY } from '../../src/config';
 import { liveIndex } from '../../src/lib/bank';
 import { addDays, dateString, isDateString } from '../../src/lib/daily';
 import { matchAnswer, normalize } from '../../src/lib/match';
@@ -38,7 +38,7 @@ export function validateBody(input: unknown, today: string): Body {
     if (!r || typeof r.promptId !== 'string' || !PROMPTS_BY_ID.has(r.promptId)) throw new HttpError(400, 'Unknown promptId');
     if (seen.has(r.promptId)) throw new HttpError(400, 'Duplicate promptId');
     seen.add(r.promptId);
-    if (!Array.isArray(r.answers) || r.answers.length > MAX_ANSWERS_PER_ROUND) throw new HttpError(400, 'Too many answers');
+    if (!Array.isArray(r.answers) || r.answers.length > MAX_ATTEMPTS_PER_ROUND) throw new HttpError(400, 'Too many answers');
     if (!r.answers.every((a) => typeof a === 'string' && a.length <= MAX_ANSWER_LENGTH * 2)) throw new HttpError(400, 'Invalid answer');
     return { promptId: r.promptId, answers: r.answers.map((a) => a.slice(0, MAX_ANSWER_LENGTH)) };
   });

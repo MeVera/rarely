@@ -99,7 +99,7 @@ function renderHome() {
       h('p', { class: 'muted small' }, formatDate(today)),
       h('h1', { id: 'home-title' }, 'Think of the answer nobody else will.'),
       h('p', { class: 'muted' },
-        `${ROUNDS_PER_DAY} prompts, ${ROUND_SECONDS} seconds each, one answer per prompt. ` +
+        `${ROUNDS_PER_DAY} prompts, ${ROUND_SECONDS} seconds each. Your first correct answer counts. ` +
         'Common answers score a little; rare ones score a lot.'),
       primary,
       note,
@@ -150,7 +150,7 @@ function renderRound() {
 
   const timerEl = h('span', { class: 'timer', role: 'timer', 'aria-label': 'Time left' }, fmtClock(round.timeLeftMs));
   const bar = h('div', {});
-  const feedback = h('p', { class: 'feedback', 'aria-live': 'polite' }, 'One answer only — make it count.');
+  const feedback = h('p', { class: 'feedback', 'aria-live': 'polite' }, 'Keep guessing until you get one right.');
   const input = h('input', {
     id: 'answer', type: 'text', autocomplete: 'off', autocapitalize: 'none', spellcheck: false,
     enterkeyhint: 'send', maxlength: 60, placeholder: 'Type your answer',
@@ -161,16 +161,32 @@ function renderRound() {
     h('button', { class: 'btn', type: 'submit' }, 'Enter'),
   );
 
-  // One answer per round: the first real submission (listed or not) ends the round.
+  // A correct answer ends the round; a wrong one says so and lets them try again.
   function onEnter() {
     const res = submitEntry(g, input.value);
     input.focus();
+    feedback.className = 'feedback';
+    void feedback.offsetWidth; // restart the animation
+    if (res.kind === 'accepted') return endRound();
     if (res.kind === 'empty') {
-      feedback.className = 'feedback meh';
+      feedback.classList.add('meh');
       feedback.textContent = 'Type an answer first, or skip.';
       return;
     }
-    endRound();
+    if (res.kind === 'full') {
+      feedback.classList.add('meh');
+      feedback.textContent = 'That’s a lot of tries — skip to the next prompt.';
+      return;
+    }
+    input.value = '';
+    feedback.classList.add('bad');
+    feedback.textContent = res.kind === 'duplicate'
+      ? 'You already tried that — try something else.'
+      : `Incorrect — “${res.entry.text}” isn’t on our list. Try again.`;
+    form.classList.remove('shake');
+    void form.offsetWidth;
+    form.classList.add('shake');
+    persist();
   }
 
   mount(
@@ -241,13 +257,13 @@ function renderReview(timeUp = false) {
       accepted.length
         ? h('ul', { class: 'chips' }, ...accepted.map((e) => h('li', { class: `chip t${e.tier}` },
             e.answer!, h('b', {}, `${labelForTier(e.tier!)} +${e.points}`))))
-        : h('p', { class: 'muted' }, rejected.length ? 'Not in our list — no points this round.' : timeUp ? 'No answer in time.' : 'Skipped.'),
+        : h('p', { class: 'muted' }, timeUp ? 'No correct answer in time.' : 'Skipped.'),
       accepted.some((e) => e.verified)
         ? h('p', { class: 'muted small' }, 'Not on our list, but it’s a real answer in the dictionary, so it scores as Rare.')
         : null,
       rejected.length
         ? h('div', {},
-            h('h3', {}, 'Not in our list'),
+            h('h3', {}, 'Incorrect guesses'),
             h('ul', { class: 'rejected-list' }, ...rejected.map((e) => rejectedRow(e))),
             ONLINE ? h('p', { class: 'muted small' }, 'Every answer is recorded. Popular ones get added to the list.') : null,
           )
@@ -331,7 +347,7 @@ function renderEnd() {
     const best = Math.max(0, ...r.entries.map((e) => e.tier ?? 0));
     return h('tr', {},
       h('td', {}, h('span', { 'aria-hidden': 'true' }, SHARE_SQUARES[best], ' '), `${i + 1}. ${def.prompt}`),
-      h('td', {}, r.entries[0]?.answer ?? (r.entries[0] ? h('s', { class: 'muted' }, r.entries[0].text) : '—')),
+      h('td', {}, r.entries.find((e) => e.answer)?.answer ?? '—'),
       h('td', { class: 'num' }, fmtNum(r.score)),
     );
   });
@@ -396,7 +412,7 @@ function showHelp() {
   openDialog('How to play',
     h('ol', {},
       h('li', {}, `Everyone gets the same ${ROUNDS_PER_DAY} prompts each day.`),
-      h('li', {}, `You have ${ROUND_SECONDS} seconds per prompt and one answer. Type it and press Enter — no take-backs.`),
+      h('li', {}, `You have ${ROUND_SECONDS} seconds per prompt. Type an answer and press Enter. If it’s wrong, you can keep guessing; your first correct answer scores and ends the round.`),
       h('li', {}, 'Rarer answers score more: ', TIER_LABELS.map((l, i) => `${l} ${pointsForTier(i + 1)}`).join(' · '), '.'),
       ONLINE ? h('li', {}, 'Rarity starts from our answer bank and adjusts to what real players say once a prompt has enough plays.') : null,
       h('li', {}, 'Spelling slips on longer words, plurals and British/American spellings are fine.'),

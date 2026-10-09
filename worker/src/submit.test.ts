@@ -21,7 +21,7 @@ describe('validateBody', () => {
     ['stale date', { ...ok, date: '2026-09-01' }],
     ['unknown prompt', { ...ok, rounds: [{ promptId: 'nope', answers: [] }] }],
     ['duplicate prompt', { ...ok, rounds: [ok.rounds[0], ok.rounds[0]] }],
-    ['more than one answer', { ...ok, rounds: [{ promptId: 'fruit', answers: ['apple', 'pear'] }] }],
+    ['too many attempts', { ...ok, rounds: [{ promptId: 'fruit', answers: Array(51).fill('x') }] }],
     ['non-string answer', { ...ok, rounds: [{ promptId: 'fruit', answers: [42] }] }],
     ['no rounds', { ...ok, rounds: [] }],
   ])('rejects %s', (_name, body) => {

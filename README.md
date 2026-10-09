@@ -1,6 +1,6 @@
 # Rarely
 
-A daily word game. Everyone gets the same 20 prompts each day (resetting at midnight Melbourne time), 30 seconds and one answer per prompt. Rarer answers score more.
+A daily word game. Everyone gets the same 20 prompts each day (resetting at midnight Melbourne time), 30 seconds per prompt. Wrong guesses just say "Incorrect" so you can try again; your first correct answer scores and ends the round. Rarer answers score more.
 
 - **Frontend**: Vite + vanilla TypeScript + plain CSS → Cloudflare Pages.
 - **Backend**: one Cloudflare Worker (`worker/`) with D1, a KV namespace for `tiers.json`, and an hourly cron.
